@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createUser, deleteUser, getAllUsersByRole, getCounts, getCustomerVerifyCounts, getUserById, updateUser } from '../controllers/userController';
 import { authenticateUser, authorizeAdmin } from '../middleware/authMiddleware';
-import { getAllCollection, getCustomerData } from '../controllers/salesmanController';
+import { getAllCollection, getCustomerData, verifyPayment } from '../controllers/salesmanController';
 
 const router = Router();
 
@@ -16,6 +16,6 @@ router.get('/payment-verified',authenticateUser, getCustomerData);
 router.get('/customer-verified-count',authenticateUser, getCustomerVerifyCounts);
 
 router.get('/total', getCounts);
-
+router.put('/verify/:id', verifyPayment);
 
 export default router;

@@ -6,8 +6,7 @@ export interface ICollectedData extends Document {
     date: Date;
     customerName: IUser['_id'];
     salesman: IUser['_id']; // Reference to the salesman who entered the data
-    customerVerify: Boolean;
-    token: string
+    customerVerify:  'Accepted' | 'Rejected' | 'Pending';
 }
 
 const collectDataSchema: Schema = new Schema({
@@ -15,8 +14,8 @@ const collectDataSchema: Schema = new Schema({
     date: { type: Date, required: true },
     customerName: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to the User (salesman)
     salesman: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to the User (salesman)
-    token: { type: String, required: true },
-    customerVerify: { type: Boolean, default: false } // Added default value
+    customerVerify: { type: String, required: true, enum: ['Accepted', 'Rejected', 'Pending'], default: 'Pending' }
+
 });
 
 const CollectedData = mongoose.model<ICollectedData>('CollectedData', collectDataSchema);

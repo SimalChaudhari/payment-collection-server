@@ -41,7 +41,7 @@ export const loginUser = async (email: string, password: string) => {
   const token = jwt.sign(
     { id: user._id, email: user.email, role: user.role },
     'your-secret-key', // Use an environment variable for the secret key
-    { expiresIn: '1h' }
+    { expiresIn: '30d' }
   );
 
   return { token, user };

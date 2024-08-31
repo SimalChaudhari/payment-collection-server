@@ -165,23 +165,27 @@ export const getCustomerData = async (req: Request, res: Response) => {
 
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
-        const { token } = req.params; // Extract the token from the request parameters
+        const { id } = req.params;
+        const { status } = req.body; // Expecting 'Accepted' or 'Rejected'
 
-        // Find the collected data entry with the given token
-        const collectedData = await CollectedData.findOne({ token: token });
-        if (!collectedData) {
-            return res.status(400).json({ message: 'Invalid or expired token' });
+        if (!['Accepted', 'Rejected'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status. Must be "Accepted" or "Rejected".' });
         }
 
-        // Update the `customerVerify` field
-        collectedData.customerVerify = true;
+        const collectedData = await CollectedData.findById(id);
+        if (!collectedData) {
+            return res.status(404).json({ message: 'Collected data not found.' });
+        }
+
+        collectedData.customerVerify = status;
         await collectedData.save();
 
-        res.status(200).json({ message: 'Verification successful' });
+        res.status(200).json({ message: `Status updated to ${status}`, collectedData });
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message });
+        res.status(500).json({ message: 'Server error', error });
     }
 };
+
 
 
 

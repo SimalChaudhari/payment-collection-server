@@ -1,37 +1,25 @@
-import twilio from 'twilio';
-import dotenv from 'dotenv';
-dotenv.config();
+import axios from 'axios';
 
-// Load environment variables
-const accountSid = process.env.TWILIO_ACCOUNT_SID as string;
-const authToken = process.env.TWILIO_AUTH_TOKEN as string;
-
-// Initialize Twilio client
-const client = twilio(accountSid, authToken);
-
-
-// Function to send WhatsApp message
-export const sendWhatsAppMessage = async (customerName: string, mobile: string, collectedAmount: string, date: string, verifyLink: string) => {
-    const message = `
-    Hi ${customerName},
-    
-    We've received your payment of ₹${collectedAmount} on ${date}.
-    
-    Please verify your transaction by clicking the button below:
-    
-    [Verify](${verifyLink})
-    
-    If you have any questions, reply to this message.
-    
-    Thank you
-        `;
+export const sendWhatsAppMessage = async (name: string, mobile: string, amount: string, date: string, verifyLink: string) => {
     try {
-        await client.messages.create({
-            body: message,
-            from: process.env.TWILIO_PHONE_NUMBER, // Twilio Sandbox WhatsApp number
-            to: "+916351735093"
-        });
+        // Create the message
+        const message = `Hello ${name}, your payment of ₹${amount} on ${date} is recorded. Please verify your payment here: ${verifyLink}`;
+
+        // URL encode the message
+        const encodedMessage = encodeURIComponent(message);
+
+        // Construct the API URL
+        const apiUrl = `https://wp.smartwebsolution.in/api/send?number=${mobile}&type=text&message=${encodedMessage}&instance_id=66D196BC5F5EF&access_token=66d1968a854f8`;
+
+        // Send the WhatsApp message via the API
+        const response = await axios.get(apiUrl);
+
+        // Log the response for debugging purposes
+        console.log('WhatsApp message sent:', response.data);
+
+        return response.data;
     } catch (error) {
         console.error('Error sending WhatsApp message:', error);
+        throw new Error('Failed to send WhatsApp message');
     }
 };

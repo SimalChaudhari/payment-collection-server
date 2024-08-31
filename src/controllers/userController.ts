@@ -84,15 +84,31 @@ export const updateUser = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        // Check if the new email is provided and is different from the current email
+        let newPassword: string | null = null;
+        if (email && email !== user.email) {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ message: 'Email is already in use' });
+            }
+
+            // Generate a new password if the email is changed
+            newPassword = generateRandomPassword();
+            user.password = await bcrypt.hash(newPassword, 10);
+
+            // Send the new password via email
+            await sendEmail(email, newPassword);
+        }
+
         // Update user fields
         if (name) user.name = name;
-        if (email) user.email = email;
+        if (email && email !== user.email) user.email = email;
         if (mobile) user.mobile = mobile;
-
         if (role) user.role = role;
-        if (password) {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            user.password = hashedPassword;
+
+        // Only update the password if it is provided and the email is not being changed
+        if (password && !newPassword) {
+            user.password = await bcrypt.hash(password, 10);
         }
 
         // Save the updated user
@@ -103,6 +119,7 @@ export const updateUser = async (req: Request, res: Response) => {
         res.status(500).json({ message: (error as Error).message });
     }
 };
+
 export const deleteUser = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

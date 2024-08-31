@@ -14,7 +14,7 @@ router.get('/get-count', authenticateUser, authorizeSalesman, getCollectedCountB
 
 //-------------------------------------------------------------
 router.get('/get', getReports);
-router.get('/verify/:token', verifyPayment);
+
 router.get('/get-all', getAllCollection);
 
 export default router;
