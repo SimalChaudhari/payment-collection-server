@@ -4,7 +4,7 @@ import CollectedData from '../models/CollectedData'; // Adjust the import based 
 export const getReports = async (req: Request, res: Response) => {
   try {
     // Fetch all collected data where `customerVerify` is true
-    const verifiedData = await CollectedData.find({ customerVerify: true })
+    const verifiedData = await CollectedData.find({ customerVerify: "Accepted" })
       .populate('customerName', 'name') // Populate customerName with name field
       .populate('salesman', 'name'); // Populate salesman with name field
 

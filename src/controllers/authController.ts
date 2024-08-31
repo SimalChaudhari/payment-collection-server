@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { loginUser } from '../services/authService';
-import { Message } from 'whatsapp-web.js';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 // Controller for registering a user (Salesman or Customer)

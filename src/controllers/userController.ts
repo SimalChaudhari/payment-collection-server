@@ -76,7 +76,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, email, mobile, password, role } = req.body;
+        const { name, email, mobile, role } = req.body;
 
         // Find the user by ID
         const user = await User.findById(id);
@@ -85,7 +85,6 @@ export const updateUser = async (req: Request, res: Response) => {
         }
 
         // Check if the new email is provided and is different from the current email
-        let newPassword: string | null = null;
         if (email && email !== user.email) {
             const existingUser = await User.findOne({ email });
             if (existingUser) {
@@ -93,23 +92,20 @@ export const updateUser = async (req: Request, res: Response) => {
             }
 
             // Generate a new password if the email is changed
-            newPassword = generateRandomPassword();
+            const newPassword = generateRandomPassword();
             user.password = await bcrypt.hash(newPassword, 10);
 
             // Send the new password via email
             await sendEmail(email, newPassword);
+
+            // Update the email field
+            user.email = email;
         }
 
-        // Update user fields
+        // Update other user fields
         if (name) user.name = name;
-        if (email && email !== user.email) user.email = email;
         if (mobile) user.mobile = mobile;
         if (role) user.role = role;
-
-        // Only update the password if it is provided and the email is not being changed
-        if (password && !newPassword) {
-            user.password = await bcrypt.hash(password, 10);
-        }
 
         // Save the updated user
         await user.save();
@@ -119,6 +115,7 @@ export const updateUser = async (req: Request, res: Response) => {
         res.status(500).json({ message: (error as Error).message });
     }
 };
+
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
@@ -191,18 +188,24 @@ export const getCustomerVerifyCounts = async (req: Request, res: Response) => {
         // Count the number of verified documents for the specific customer
         const customerVerifySuccessCount = await CollectedData.countDocuments({
             customerName: customerId._id,
-            customerVerify: true
+            customerVerify: "Accepted"
         });
 
         // Count the number of pending verification documents for the specific customer
+        const customerVerifyRejectedCount = await CollectedData.countDocuments({
+            customerName: customerId._id,
+            customerVerify: "Rejected"
+        });
+
         const customerVerifyPendingCount = await CollectedData.countDocuments({
             customerName: customerId._id,
-            customerVerify: false
+            customerVerify: "Pending"
         });
 
         // Send the counts in the response
         res.status(200).json({
             customerVerifySuccessCount,
+            customerVerifyRejectedCount,
             customerVerifyPendingCount
         });
     } catch (error) {
