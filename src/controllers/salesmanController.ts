@@ -3,12 +3,6 @@ import CollectedData from '../models/CollectedData';
 import User from '../models/User';
 // import { sendWhatsAppMessage } from '../utils/sendWhatsAppMessage';
 import { sendWhatsAppMessage } from '../services/whatsappService';
-import crypto from 'crypto';
-
-// Function to generate a unique verification token
-const generateVerificationToken = () => {
-    return crypto.randomBytes(32).toString('hex');
-};
 
 export const createCollectedData = async (req: Request, res: Response) => {
     try {
@@ -25,17 +19,15 @@ export const createCollectedData = async (req: Request, res: Response) => {
         if (!customer) {
             return res.status(400).json({ message: 'Invalid customer' });
         }
-        
+
         // Generate a unique token for verification
-        const verifyToken = generateVerificationToken();
-        const verifyLink = `${process.env.BASE_URL}/verify/${verifyToken}`;
+        const verifyLink = process.env.LINK_URL as string;
 
         const newCollectedData = new CollectedData({
             amount,
             date,
             customerName: customer._id,  // Save only the customer ID
             salesman: salesman._id,
-            token : verifyToken // Store the token in the database
         });
 
         await newCollectedData.save();
@@ -65,14 +57,23 @@ export const updateCollectedData = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'CollectedData not found' });
         }
 
+          // Validate customerName to be a valid User (if necessary)
+          const customer = await User.findById(customerName);
+          if (!customer) {
+              return res.status(400).json({ message: 'Invalid customer' });
+          }
+
         // Update the fields with new values
         collectedData.amount = amount;
         collectedData.date = date;
-        collectedData.customerName = customerName; // Assuming you store customer ID or reference
+        collectedData.customerName = customer._id; // Assuming you store customer ID or reference
         // You can add additional fields as necessary
 
         // Save the updated entry
         await collectedData.save();
+        // Send WhatsApp message with the updated details
+        const verifyLink = process.env.LINK_URL as string;
+        await sendWhatsAppMessage(customer.name, customer.mobile, amount.toString(), date.toString(), verifyLink);
 
         res.status(200).json(collectedData);
     } catch (error) {
@@ -109,10 +110,10 @@ export const getCollectedDataBySalesman = async (req: Request, res: Response) =>
             return res.status(401).json({ message: 'Unauthorized' });
         }
         const salesman = req.user;  // `req.user` should now be recognized as `IUser`
-    
+
         const collectedData = await CollectedData.find({ salesman: salesman._id })
-        .populate('customerName', 'name') // Populate customerName with name field (optional)
-        .populate('salesman', 'name'); // Populate salesman with name field (optional)
+            .populate('customerName', 'name') // Populate customerName with name field (optional)
+            .populate('salesman', 'name'); // Populate salesman with name field (optional)
         ;
 
         res.status(200).json(collectedData);
@@ -141,7 +142,7 @@ export const getAllCollection = async (req: Request, res: Response) => {
 
 export const getCustomerData = async (req: Request, res: Response) => {
     try {
-        const customerId =  req.user;
+        const customerId = req.user;
 
         // Validate customerId
         if (!customerId) {
