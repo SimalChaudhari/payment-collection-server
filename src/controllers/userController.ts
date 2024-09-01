@@ -18,9 +18,9 @@ export const getAllUsersByRole = async (req: Request, res: Response) => {
         // Fetch users with the role 'salesman'
         const salesman = await User.find({ role: 'salesman' });
         // Check if both roles are found
-        if (customers.length === 0 && salesman.length === 0) {
-            return res.status(404).json({ message: 'No customers or salesmen found' });
-        }
+        // if (customers.length === 0 && salesman.length === 0) {
+        //     return res.status(404).json({ message: 'No customers or salesmen found' });
+        // }
 
         res.status(200).json({
             customers,

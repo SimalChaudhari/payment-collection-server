@@ -3,6 +3,7 @@ import CollectedData from '../models/CollectedData';
 import User from '../models/User';
 // import { sendWhatsAppMessage } from '../utils/sendWhatsAppMessage';
 import { sendWhatsAppMessage } from '../services/whatsappService';
+import Notification from '../models/Notification';
 
 export const createCollectedData = async (req: Request, res: Response) => {
     try {
@@ -30,6 +31,14 @@ export const createCollectedData = async (req: Request, res: Response) => {
             salesman: salesman._id,
         });
 
+        // Create a notification for the payment pending
+        const notification = new Notification({
+            userId: customer._id,
+            message: `Payment of Rs.${amount} due on ${date}. Pending`,
+            seen: false,
+        });
+
+        await notification.save();
         await newCollectedData.save();
 
         // Send WhatsApp message
@@ -57,11 +66,11 @@ export const updateCollectedData = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'CollectedData not found' });
         }
 
-          // Validate customerName to be a valid User (if necessary)
-          const customer = await User.findById(customerName);
-          if (!customer) {
-              return res.status(400).json({ message: 'Invalid customer' });
-          }
+        // Validate customerName to be a valid User (if necessary)
+        const customer = await User.findById(customerName);
+        if (!customer) {
+            return res.status(400).json({ message: 'Invalid customer' });
+        }
 
         // Update the fields with new values
         collectedData.amount = amount;
@@ -71,6 +80,28 @@ export const updateCollectedData = async (req: Request, res: Response) => {
 
         // Save the updated entry
         await collectedData.save();
+
+        // Generate the updated notification message
+        const notificationMessage = `Payment pending: ${amount} due on ${date}`;
+
+        // Update the corresponding notification
+        let notification = await Notification.findOne({ userId: customer._id});
+        if (notification) {
+            // Update existing notification
+            notification.message = notificationMessage;
+            notification.seen = false; // Mark as unseen
+            notification.createdAt = new Date(); // Update the creation date to reflect the change
+            await notification.save();
+        } else {
+            // If no existing notification, create a new one
+            notification = new Notification({
+                userId: customer._id,
+                message: notificationMessage,
+                type: 'payment_pending',
+                seen: false,
+            });
+            await notification.save();
+        }
         // Send WhatsApp message with the updated details
         const verifyLink = process.env.LINK_URL as string;
         await sendWhatsAppMessage(customer.name, customer.mobile, amount.toString(), date.toString(), verifyLink);
