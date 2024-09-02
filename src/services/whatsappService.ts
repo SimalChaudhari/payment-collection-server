@@ -15,11 +15,9 @@ export const sendWhatsAppMessage = async (
     const encodedMessage = encodeURIComponent(message);
 
     // Construct the API URL
-    const apiUrl = `https://wp.smartwebsolution.in/api/send?number=91${mobile}&type=text&message=${encodedMessage}&instance_id=66D196BC5F5EF&access_token=66d1968a854f8`;
-
+    const apiUrl = `https://wp.smartwebsolution.in/api/send?number=91${mobile}&type=text&message=${encodedMessage}&instance_id=${process.env.INSTANCE_ID}&access_token=${process.env.ACCESS_TOKEN}`;
     // Send the WhatsApp message via the API
     const response = await axios.get(apiUrl);
-
     // Log the response for debugging purposes
     console.log('WhatsApp message sent:', response.data);
 
