@@ -26,7 +26,7 @@ export const getAllUsersByRole = async (req: Request, res: Response) => {
             customers,
             salesman
         });
-    } catch (error) {
+    } catch (error) {   
         res.status(500).json({ message: (error as Error).message });
     }
 };
@@ -158,7 +158,8 @@ export const getCounts = async (req: Request, res: Response) => {
         const customerCount = await User.countDocuments({ role: 'customer' });
 
         // Sum the amounts in the CollectionData collection
-        const totalAmountData = await CollectedData.aggregate([
+         const totalAmountData = await CollectedData.aggregate([
+            { $match: { customerVerify: 'Accepted' } },
             { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
         ]);
 
