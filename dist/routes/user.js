@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const userController_1 = require("../controllers/userController");
+const authMiddleware_1 = require("../middleware/authMiddleware");
+const salesmanController_1 = require("../controllers/salesmanController");
+const notificationController_1 = require("../controllers/notificationController");
+const router = (0, express_1.Router)();
+// Login (Salesman or Customer)
+router.post('/create', authMiddleware_1.authenticateUser, authMiddleware_1.authorizeAdmin, userController_1.createUser);
+router.put('/update/:id', authMiddleware_1.authenticateUser, userController_1.updateUser);
+router.delete('/delete/:id', authMiddleware_1.authenticateUser, authMiddleware_1.authorizeAdmin, userController_1.deleteUser);
+router.get('/get-user', authMiddleware_1.authenticateUser, userController_1.getAllUsersByRole);
+router.get('/get/:id', authMiddleware_1.authenticateUser, authMiddleware_1.authorizeAdmin, userController_1.getUserById);
+router.get('/payment-history', authMiddleware_1.authenticateUser, salesmanController_1.getAllCollection);
+router.get('/payment-verified', authMiddleware_1.authenticateUser, salesmanController_1.getCustomerData);
+router.get('/customer-verified-count', authMiddleware_1.authenticateUser, userController_1.getCustomerVerifyCounts);
+router.get('/total', authMiddleware_1.authenticateUser, userController_1.getCounts);
+router.put('/verify/:id', authMiddleware_1.authenticateUser, salesmanController_1.verifyPayment);
+router.get('/notification/:id', authMiddleware_1.authenticateUser, notificationController_1.getSeenNotifications);
+router.put('/seen/:id', authMiddleware_1.authenticateUser, notificationController_1.markNotificationAsSeen);
+exports.default = router;
