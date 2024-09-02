@@ -7,6 +7,7 @@ export interface ICollectedData extends Document {
     customerName: IUser['_id'];
     salesman: IUser['_id']; // Reference to the salesman who entered the data
     customerVerify:  'Accepted' | 'Rejected' | 'Pending';
+    createdAt: Date;
 }
 
 const collectDataSchema: Schema = new Schema({
@@ -14,7 +15,11 @@ const collectDataSchema: Schema = new Schema({
     date: { type: Date, required: true },
     customerName: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to the User (salesman)
     salesman: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to the User (salesman)
-    customerVerify: { type: String, required: true, enum: ['Accepted', 'Rejected', 'Pending'], default: 'Pending' }
+    customerVerify: { type: String, required: true, enum: ['Accepted', 'Rejected', 'Pending'], default: 'Pending' },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
 
 });
 

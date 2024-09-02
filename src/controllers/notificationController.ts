@@ -35,8 +35,8 @@ export const markNotificationAsSeen = async (req: Request, res: Response) => {
             { _id: id, seen: false },
             { $set: { seen: true } }
         );
+    
 
-        // Check if any document was modified
 
         // Return success message
         res.status(200).json({ message: 'Notification marked as seen' });

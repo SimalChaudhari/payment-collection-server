@@ -85,7 +85,7 @@ export const updateCollectedData = async (req: Request, res: Response) => {
         const notificationMessage = `Payment pending: ${amount} due on ${date}`;
 
         // Update the corresponding notification
-        let notification = await Notification.findOne({ userId: customer._id});
+        let notification = await Notification.findOne({ userId: customer._id });
         if (notification) {
             // Update existing notification
             notification.message = notificationMessage;
@@ -211,7 +211,6 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
         collectedData.customerVerify = status;
         await collectedData.save();
-
         res.status(200).json({ message: `Status updated to ${status}`, collectedData });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
