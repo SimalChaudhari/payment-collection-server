@@ -55,7 +55,7 @@ export const RequestPasswordReset = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, {
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET! as string, {
             expiresIn: '5m',
         });
 
@@ -77,7 +77,7 @@ export const ResetNewPassword = async (req: Request, res: Response) => {
     const { token, newPassword } = req.body;
 
     try {
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET! as string);
         const user = await User.findOne({
             _id: decoded.userId,
             resetToken: token,

@@ -40,7 +40,7 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error('Invalid email or password');
   }
 
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.JWT_SECRET as string;
 
   if (!secret) {
     throw new Error('JWT_SECRET is not defined');
