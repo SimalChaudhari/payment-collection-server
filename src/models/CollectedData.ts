@@ -8,6 +8,7 @@ export interface ICollectedData extends Document {
     salesman: IUser['_id']; // Reference to the salesman who entered the data
     customerVerify:  'Accepted' | 'Rejected' | 'Pending';
     createdAt: Date;
+    statusUpdatedAt?: Date; // Optional field for the date when the status was updated
 }
 
 const collectDataSchema: Schema = new Schema({
@@ -19,6 +20,10 @@ const collectDataSchema: Schema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now,
+    },
+    statusUpdatedAt: {
+        type: Date,
+        default: null, // Set default to null if no update has occurred
     },
 
 });

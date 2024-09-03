@@ -210,6 +210,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
         }
 
         collectedData.customerVerify = status;
+        if (status === 'Accepted' || status === 'Rejected') {
+            collectedData.statusUpdatedAt = new Date(); // Set the date when status is updated
+        }
+        
         await collectedData.save();
         res.status(200).json({ message: `Status updated to ${status}`, collectedData });
     } catch (error) {

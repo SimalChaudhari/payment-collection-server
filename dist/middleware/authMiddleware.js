@@ -22,7 +22,7 @@ const authenticateUser = (req, res, next) => __awaiter(void 0, void 0, void 0, f
         if (!token) {
             return res.status(401).json({ message: 'No token provided' });
         }
-        const decoded = jsonwebtoken_1.default.verify(token, 'your-secret-key');
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         const user = yield User_1.default.findById(decoded.id);
         if (!user) {
             return res.status(401).json({ message: 'Invalid token' });

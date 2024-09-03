@@ -16,6 +16,10 @@ declare module 'express-serve-static-core' {
     }
 }
 
+interface DecodedToken {
+    id: string;
+}
+
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -24,7 +28,13 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             return res.status(401).json({ message: 'No token provided' });
         }
 
-        const decoded = jwt.verify(token, 'your-secret-key') as { id: string };
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as DecodedToken;
+
+        // Check if the decoded object has the required 'id' property
+        if (!decoded || !decoded.id) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+
         const user = await User.findById(decoded.id);
 
         if (!user) {

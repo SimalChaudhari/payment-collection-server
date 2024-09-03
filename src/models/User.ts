@@ -6,7 +6,10 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'salesman' | 'customer' | 'admin';
+  resetToken?: string; // Add this field for storing the reset token
+  resetTokenExpiry?: Date; // Optional: Add an expiry field for the token
   createdAt: Date;
+  
 }
 
 const userSchema: Schema = new Schema({
@@ -15,6 +18,8 @@ const userSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, required: true, enum: ['salesman', 'customer','admin'] },
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date }, // Optional: To handle token expiration
   createdAt: {
     type: Date,
     default: Date.now,

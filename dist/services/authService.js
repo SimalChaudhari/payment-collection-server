@@ -46,7 +46,7 @@ const loginUser = (email, password) => __awaiter(void 0, void 0, void 0, functio
         throw new Error('Invalid email or password');
     }
     // Generate a token
-    const token = jsonwebtoken_1.default.sign({ id: user._id, email: user.email, role: user.role }, 'your-secret-key', // Use an environment variable for the secret key
+    const token = jsonwebtoken_1.default.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, // Use an environment variable for the secret key
     { expiresIn: '30d' });
     return { token, user };
 });
