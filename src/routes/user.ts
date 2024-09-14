@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, deleteUser, getAllUsersByRole, getCounts, getCustomerVerifyCounts, getUserById, updateUser } from '../controllers/userController';
+import { createAddress, createUser, deleteAddress, deleteUser, getAddress, getAllUsersByRole, getCounts, getCustomerVerifyCounts, getUserById, updateAddress, updateUser } from '../controllers/userController';
 import { authenticateUser, authorizeAdmin } from '../middleware/authMiddleware';
 import { getAllCollection, getCustomerData, verifyPayment } from '../controllers/salesmanController';
 import { getSeenNotifications, markNotificationAsSeen } from '../controllers/notificationController';
@@ -21,6 +21,13 @@ router.put('/verify/:id', authenticateUser, verifyPayment);
 
 router.get('/notification/:id', authenticateUser, getSeenNotifications);
 router.put('/seen/:id', authenticateUser, markNotificationAsSeen);
+
+
+// Address
+router.post('/create-address', authenticateUser, authorizeAdmin, createAddress);
+router.put('/update-address/:id', authenticateUser, authorizeAdmin, updateAddress);
+router.delete('/delete-address/:id', authenticateUser, authorizeAdmin, deleteAddress);
+router.get('/get-address', authenticateUser, authorizeAdmin, getAddress);
 
 
 

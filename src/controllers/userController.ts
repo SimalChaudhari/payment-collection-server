@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { sendEmail } from '../services/authService';
 import CollectedData from '../models/CollectedData';
+import { sendWhatsappCredential } from '../services/whatsappService';
+import Address from '../models/Address';
 
 // Generate a random password
 const generateRandomPassword = (length: number = 12): string => {
@@ -26,7 +28,7 @@ export const getAllUsersByRole = async (req: Request, res: Response) => {
             customers,
             salesman
         });
-    } catch (error) {   
+    } catch (error) {
         res.status(500).json({ message: (error as Error).message });
     }
 };
@@ -64,7 +66,8 @@ export const createUser = async (req: Request, res: Response) => {
         await newUser.save();
 
         // Send email with password
-        await sendEmail(email, randomPassword);
+        // await sendEmail(email, randomPassword);
+        await sendWhatsappCredential(email, randomPassword, mobile)
 
         res.status(201).json({ message: 'User created successfully, password sent via email', user: newUser });
     } catch (error) {
@@ -96,8 +99,8 @@ export const updateUser = async (req: Request, res: Response) => {
             user.password = await bcrypt.hash(newPassword, 10);
 
             // Send the new password via email
-            await sendEmail(email, newPassword);
-
+            // await sendEmail(email, newPassword);
+            await sendWhatsappCredential(email, newPassword, mobile)
             // Update the email field
             user.email = email;
         }
@@ -158,7 +161,7 @@ export const getCounts = async (req: Request, res: Response) => {
         const customerCount = await User.countDocuments({ role: 'customer' });
 
         // Sum the amounts in the CollectionData collection
-         const totalAmountData = await CollectedData.aggregate([
+        const totalAmountData = await CollectedData.aggregate([
             { $match: { customerVerify: 'Accepted' } },
             { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
         ]);
@@ -214,3 +217,91 @@ export const getCustomerVerifyCounts = async (req: Request, res: Response) => {
     }
 };
 
+
+export const createAddress = async (req: Request, res: Response) => {
+    try {
+        const { city, areas } = req.body;
+
+        // Validate required fields
+        if (!city || !areas || !Array.isArray(areas)) {
+            return res.status(400).json({ message: 'City and area are required, and area must be an array.' });
+        }
+
+        // Create a new address document
+        const newAddress = new Address({
+            city,
+            areas
+        });
+
+        // Save the new address to the database
+        const savedAddress = await newAddress.save();
+
+        // Return success response
+        return res.status(201).json({
+            message: 'Address created successfully',
+            address: savedAddress
+        });
+    } catch (error) {
+        console.error('Error creating address:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+
+export const updateAddress = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { city, areas} = req.body;
+
+        // Validate inputs
+        if (!city || !areas || !Array.isArray(areas)) {
+            return res.status(400).json({ message: 'City and area are required, and area must be an array.' });
+        }
+
+        // Find the address by ID and update it
+        const updatedAddress = await Address.findByIdAndUpdate(
+            id,
+            { city, areas },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedAddress) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        return res.status(200).json({ message: 'Address updated successfully', address: updatedAddress });
+    } catch (error) {
+        console.error('Error updating address:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+export const deleteAddress = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Find the address by ID and delete it
+        const deletedAddress = await Address.findByIdAndDelete(id);
+
+        if (!deletedAddress) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        return res.status(200).json({ message: 'Address deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+export const getAddress = async (req: Request, res: Response) => {
+    try {
+        // Fetch all addresses from the database
+        const address = await Address.find();
+
+        res.status(200).json(address);
+    } catch (error) {
+        console.error('Error fetching addresses:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
