@@ -6,9 +6,10 @@ export interface ICollectedData extends Document {
     date: Date;
     customerName: IUser['_id'];
     salesman: IUser['_id']; // Reference to the salesman who entered the data
-    customerVerify:  'Accepted' | 'Rejected' | 'Pending';
+    customerVerify: 'Accepted' | 'Rejected' | 'Pending';
     createdAt: Date;
     statusUpdatedAt?: Date; // Optional field for the date when the status was updated
+    reason?: string | null; // Allow null as well as string and undefined
 }
 
 const collectDataSchema: Schema = new Schema({
@@ -25,7 +26,10 @@ const collectDataSchema: Schema = new Schema({
         type: Date,
         default: null, // Set default to null if no update has occurred
     },
-
+    reason: {
+        type: String,
+        default: null, // Optional field with a default value of null
+    },
 });
 
 const CollectedData = mongoose.model<ICollectedData>('CollectedData', collectDataSchema);

@@ -59,6 +59,7 @@ export const loginUser = async (email: string, password: string) => {
 
 
 export const sendEmail = async (to: string, password: string) => {
+  console.log(to,password)
   const transporter = nodemailer.createTransport({
     service: 'Gmail',  // Use your email service
     auth: {

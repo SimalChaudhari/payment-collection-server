@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
@@ -6,7 +6,7 @@ import { sendEmail } from '../services/authService';
 import CollectedData from '../models/CollectedData';
 import { sendWhatsappCredential } from '../services/whatsappService';
 import Address from '../models/Address';
-
+import mongoose, { Types } from 'mongoose';
 // Generate a random password
 const generateRandomPassword = (length: number = 12): string => {
     return randomBytes(length).toString('hex').slice(0, length);
@@ -36,7 +36,7 @@ export const getAllUsersByRole = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        const { name, email, mobile, role } = req.body;
+        const { name, email, mobile, address, role } = req.body;
 
         // Validate role
         if (!['customer', 'salesman'].includes(role)) {
@@ -53,6 +53,25 @@ export const createUser = async (req: Request, res: Response) => {
         const randomPassword = generateRandomPassword();
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
+        // Handle address if provided
+        let addressId: Types.ObjectId | null = null;
+        if (address) {
+            // Check if the city exists
+            const existingCity = await Address.findOne({ city: address.city });
+            if (!existingCity) {
+                return res.status(400).json({ message: 'City not found' });
+            }
+
+            // Validate single area
+            const validAreas = existingCity.areas;
+            if (!validAreas.includes(address.areas)) {
+                return res.status(400).json({ message: `Invalid area provided: ${address.areas}` });
+            }
+
+            // Explicitly set the addressId
+            addressId = existingCity._id as Types.ObjectId; // Explicit type assertion
+        }
+
         // Create new user
         const newUser = new User({
             name,
@@ -60,6 +79,7 @@ export const createUser = async (req: Request, res: Response) => {
             mobile,
             password: hashedPassword,
             role,
+            address
         });
 
         // Save user to the database
@@ -75,11 +95,27 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
+const validateAddress = async (city: string, areas: string): Promise<string | null> => {
+    // Check if the city exists
+    const existingCity = await Address.findOne({ city });
+    if (!existingCity) {
+        return 'City not found';
+    }
+
+    // Validate the area
+    const validAreas = existingCity.areas;
+    if (!validAreas.includes(areas)) {
+        return `Invalid area provided: ${areas}`;
+    }
+
+    return null; // No errors
+};
+
 
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, email, mobile, role } = req.body;
+        const { name, email, mobile, role, address } = req.body;
 
         // Find the user by ID
         const user = await User.findById(id);
@@ -104,7 +140,19 @@ export const updateUser = async (req: Request, res: Response) => {
             // Update the email field
             user.email = email;
         }
+        // Validate address if provided
+        if (address) {
+            const validationError = await validateAddress(address.city, address.areas);
+            if (validationError) {
+                return res.status(400).json({ message: validationError });
+            }
 
+            // Update the address fields
+            user.address = {
+                city: address.city,
+                areas: address.areas
+            };
+        }
         // Update other user fields
         if (name) user.name = name;
         if (mobile) user.mobile = mobile;
@@ -251,7 +299,7 @@ export const createAddress = async (req: Request, res: Response) => {
 export const updateAddress = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { city, areas} = req.body;
+        const { city, areas } = req.body;
 
         // Validate inputs
         if (!city || !areas || !Array.isArray(areas)) {

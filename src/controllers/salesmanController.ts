@@ -143,8 +143,9 @@ export const getCollectedDataBySalesman = async (req: Request, res: Response) =>
         const salesman = req.user;  // `req.user` should now be recognized as `IUser`
 
         const collectedData = await CollectedData.find({ salesman: salesman._id })
-            .populate('customerName', 'name') // Populate customerName with name field (optional)
-            .populate('salesman', 'name'); // Populate salesman with name field (optional)
+            .populate('customerName', 'name address') // Populate customerName with name field (optional)
+            .populate('salesman', 'name address'); // Populate salesman with name and address fields
+
         ;
 
         res.status(200).json(collectedData);
@@ -158,8 +159,9 @@ export const getAllCollection = async (req: Request, res: Response) => {
     try {
         // Fetch all collected data where `customerVerify` is true
         const verifiedData = await CollectedData.find()
-            .populate('customerName', 'name') // Populate customerName with name field (optional)
-            .populate('salesman', 'name'); // Populate salesman with name field (optional)
+            .populate('customerName', 'name address') // Populate customerName with name field (optional)
+            .populate('salesman', 'name address'); // Populate salesman with name and address fields
+
 
         if (!verifiedData.length) {
             return res.status(404).json({ message: 'No verified data found' });
@@ -182,8 +184,8 @@ export const getCustomerData = async (req: Request, res: Response) => {
 
         // Fetch data for the specific customer
         const customerData = await CollectedData.find({ customerName: customerId._id })
-            .populate('customerName', 'name') // Populate customerName with name field (optional)
-            .populate('salesman', 'name'); // Populate salesman with name field (optional)
+            .populate('customerName', 'name address') // Populate customerName with name field (optional)
+            .populate('salesman', 'name address'); // Populate salesman with name and address fields
 
         if (!customerData.length) {
             return res.status(404).json({ message: 'No data found for the specified customer' });
@@ -198,7 +200,7 @@ export const getCustomerData = async (req: Request, res: Response) => {
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { status } = req.body; // Expecting 'Accepted' or 'Rejected'
+        const { status, reason } = req.body; // Expecting 'Accepted' or 'Rejected' and reason if rejected
 
         if (!['Accepted', 'Rejected'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status. Must be "Accepted" or "Rejected".' });
@@ -209,11 +211,23 @@ export const verifyPayment = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Collected data not found.' });
         }
 
-        collectedData.customerVerify = status;
-        if (status === 'Accepted' || status === 'Rejected') {
-            collectedData.statusUpdatedAt = new Date(); // Set the date when status is updated
+        // If status is 'Rejected', ensure a reason is provided
+        if (status === 'Rejected' && !reason) {
+            return res.status(400).json({ message: 'Reason is required when status is "Rejected".' });
         }
-        
+
+        // Update the status and reason (if applicable)
+        collectedData.customerVerify = status;
+        if (status === 'Rejected') {
+            collectedData.reason = reason; // Set the reason if status is 'Rejected'
+        } else {
+            collectedData.reason = null; // Clear the reason if status is 'Accepted'
+        }
+
+        // Update the statusUpdatedAt field when status is updated
+        collectedData.statusUpdatedAt = new Date();
+
+
         await collectedData.save();
         res.status(200).json({ message: `Status updated to ${status}`, collectedData });
     } catch (error) {

@@ -5,8 +5,8 @@ export const getReports = async (req: Request, res: Response) => {
   try {
     // Fetch all collected data where `customerVerify` is true
     const verifiedData = await CollectedData.find({ customerVerify: "Accepted" })
-      .populate('customerName', 'name') // Populate customerName with name field
-      .populate('salesman', 'name'); // Populate salesman with name field
+      .populate('customerName', 'name address') // Populate customerName with name field
+      .populate('salesman', 'name address'); // Populate salesman with name field
 
     if (verifiedData.length === 0) {
       return res.status(404).json({ message: 'Report Not found' });
