@@ -4,32 +4,12 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 
 
-
-// Register a new user (Salesman or Customer)
-export const registerUser = async (userData: IUser) => {
-  const { email, password, role } = userData;
-
-  // Check if email already exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new Error('Email already exists');
-  }
-
-  // Hash the password before saving
-  const hashedPassword = await bcrypt.hash(password, 10);
-  userData.password = hashedPassword;
-
-  const newUser = new User({ ...userData, role });
-  await newUser.save();
-  return newUser;
-};
-
 // Login a user (Salesman or Customer)
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (mobile: string, password: string) => {
   // Find the user by email
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ mobile });
   if (!user) {
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid mobile or password');
   }
 
   // Compare the provided password with the stored hashed password
@@ -37,7 +17,7 @@ export const loginUser = async (email: string, password: string) => {
 
 
   if (!isPasswordValid) {
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid mobile or password');
   }
 
   const secret = process.env.JWT_SECRET as string;
@@ -48,13 +28,14 @@ export const loginUser = async (email: string, password: string) => {
 
   // Generate a token
   const token = jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: user._id, mobile: user.mobile, role: user.role },
     secret, // Use an environment variable for the secret key
     { expiresIn: '30d' }
   );
 
   return { token, user };
 };
+
 
 
 

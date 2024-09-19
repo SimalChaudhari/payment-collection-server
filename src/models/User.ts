@@ -3,11 +3,11 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IUser extends Document {
   name: string;
   mobile: string;
-  email: string;
+  email?: string;
   password: string;
   role: 'salesman' | 'customer' | 'admin';
-  resetToken?: string; // Add this field for storing the reset token
-  resetTokenExpiry?: Date; // Optional: Add an expiry field for the token
+  otp?: string; // Add this field for storing the reset token
+  otpExpires?: Date; // Add this field
   createdAt: Date;
   address?: {
     city: string;
@@ -18,11 +18,12 @@ export interface IUser extends Document {
 const userSchema: Schema = new Schema({
   name: { type: String, required: true },
   mobile: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, unique: true, sparse: true, default: undefined },
+
   password: { type: String, required: true },
   role: { type: String, required: true, enum: ['salesman', 'customer', 'admin'] },
-  resetToken: { type: String },
-  resetTokenExpiry: { type: Date }, // Optional: To handle token expiration
+  otp: { type: String },
+
   createdAt: {
     type: Date,
     default: Date.now,

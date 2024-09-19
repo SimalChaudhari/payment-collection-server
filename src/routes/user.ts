@@ -7,7 +7,7 @@ import { getSeenNotifications, markNotificationAsSeen } from '../controllers/not
 const router = Router();
 
 // Login (Salesman or Customer)
-router.post('/create', authenticateUser, authorizeAdmin, createUser);
+router.post('/create',  createUser);
 router.put('/update/:id', authenticateUser, updateUser);
 router.delete('/delete/:id', authenticateUser, authorizeAdmin, deleteUser);
 router.get('/get-user', authenticateUser, getAllUsersByRole);
