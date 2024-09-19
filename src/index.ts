@@ -5,6 +5,8 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import collectedDataRoutes from './routes/collectedData';
 import reportRoutes from './routes/report';
+import whatsappRoutes from './routes/whatsapp';
+
 
 
 import connectToMongoDB from './config/config';
@@ -22,6 +24,8 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/collected-data', collectedDataRoutes);
 app.use('/report', reportRoutes);
+app.use('/whatsapp', whatsappRoutes);
+
 
 
 const PORT = process.env.PORT || 5000;

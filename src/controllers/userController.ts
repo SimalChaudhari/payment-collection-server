@@ -37,63 +37,65 @@ export const getAllUsersByRole = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
     try {
         const { name, email, mobile, address, role } = req.body;
-
         // Validate role
         if (!['customer', 'salesman'].includes(role)) {
             return res.status(400).json({ message: 'Invalid role specified' });
         }
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+        // Handle empty email string
+        const processedEmail = email?.trim() || undefined;
+        // Check if user already exists, only if email is provided
+        if (processedEmail) {
+            const existingUser = await User.findOne({ email: processedEmail });
+            if (existingUser) {
+                return res.status(400).json({ message: 'User already exists' });
+            }
         }
 
+        if (mobile) {
+            const existingUser = await User.findOne({ mobile });
+            if (existingUser) {
+                return res.status(400).json({ message: 'Mobile Number already exists' });
+            }
+        }
         // Generate and hash a random password
         const randomPassword = generateRandomPassword();
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
         // Handle address if provided
         let addressId: Types.ObjectId | null = null;
         if (address) {
-            // Check if the city exists
             const existingCity = await Address.findOne({ city: address.city });
             if (!existingCity) {
                 return res.status(400).json({ message: 'City not found' });
             }
 
-            // Validate single area
             const validAreas = existingCity.areas;
             if (!validAreas.includes(address.areas)) {
                 return res.status(400).json({ message: `Invalid area provided: ${address.areas}` });
             }
 
-            // Explicitly set the addressId
-            addressId = existingCity._id as Types.ObjectId; // Explicit type assertion
+            addressId = existingCity._id as Types.ObjectId;
         }
-
         // Create new user
         const newUser = new User({
             name,
-            email,
+            email: processedEmail,
             mobile,
             password: hashedPassword,
             role,
             address
         });
-
         // Save user to the database
         await newUser.save();
-
-        // Send email with password
-        // await sendEmail(email, randomPassword);
-        await sendWhatsappCredential(email, randomPassword, mobile)
-
-        res.status(201).json({ message: 'User created successfully, password sent via email', user: newUser });
+        // Send email or other credentials
+        // await sendEmail(email,randomPassword);
+        await sendWhatsappCredential(randomPassword, mobile);
+        res.status(201).json({ message: 'User created successfully, password sent via Whatsapp', user: newUser });
     } catch (error) {
         res.status(500).json({ message: (error as Error).message });
     }
 };
+
+
 
 const validateAddress = async (city: string, areas: string): Promise<string | null> => {
     // Check if the city exists
@@ -123,23 +125,44 @@ export const updateUser = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
+      
         // Check if the new email is provided and is different from the current email
-        if (email && email !== user.email) {
-            const existingUser = await User.findOne({ email });
-            if (existingUser) {
-                return res.status(400).json({ message: 'Email is already in use' });
+        if (email !== undefined) {
+            if (email !== user.email) {
+                // If the new email is non-empty, ensure it's not already in use
+                if (email !== "") {
+                    const existingUser = await User.findOne({ email });
+                    if (existingUser) {
+                        return res.status(400).json({ message: 'Email is already in use' });
+                    }
+                    user.email = email;
+                } else {
+                    // If the email is an empty string, clear the email
+                    user.email = undefined;
+                }
             }
-
-            // Generate a new password if the email is changed
-            const newPassword = generateRandomPassword();
-            user.password = await bcrypt.hash(newPassword, 10);
-
-            // Send the new password via email
-            // await sendEmail(email, newPassword);
-            await sendWhatsappCredential(email, newPassword, mobile)
-            // Update the email field
-            user.email = email;
         }
+
+
+        // Store the current mobile number
+        const oldMobile = user.mobile;
+
+        // Handle mobile change if provided
+        if (mobile) {
+            if (mobile !== oldMobile) {
+                const existingUser = await User.findOne({ mobile });
+                if (existingUser) {
+                    return res.status(400).json({ message: 'Mobile Number already exists' });
+                }
+                // Generate and hash a new password
+                const newPassword = generateRandomPassword();
+                user.password = await bcrypt.hash(newPassword, 10);
+                // Send the new password via WhatsApp
+                await sendWhatsappCredential(newPassword, mobile);
+            }
+            user.mobile = mobile;
+        }
+
         // Validate address if provided
         if (address) {
             const validationError = await validateAddress(address.city, address.areas);
@@ -155,7 +178,6 @@ export const updateUser = async (req: Request, res: Response) => {
         }
         // Update other user fields
         if (name) user.name = name;
-        if (mobile) user.mobile = mobile;
         if (role) user.role = role;
 
         // Save the updated user
